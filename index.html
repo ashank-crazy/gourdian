@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gourdian · don't let Jack rot</title>
+  <meta name="description" content="A focus timer guarded by Jack, a pumpkin who rots in real time when you leave the tab. Come back and you have to confess where you went.">
+  <meta name="theme-color" content="#140f1f">
+  <meta property="og:title" content="Gourdian: the focus timer that rots when you procrastinate">
+  <meta property="og:description" content="Leave the tab and Jack the pumpkin starts to rot. Even the favicon. Come back and confess.">
+  <meta property="og:image" content="https://ashank-crazy.github.io/gourdian/media/og.png">
+  <meta property="og:url" content="https://ashank-crazy.github.io/gourdian/">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" id="favicon" href="favicon.svg">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400..700;1,9..40,400&family=Fraunces:ital,opsz,wght@0,9..144,500..800;1,9..144,500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="sky" aria-hidden="true">
+    <svg id="stars" class="stars" width="100%" height="100%"></svg>
+    <div class="moon"></div>
+    <svg class="hills" viewBox="0 0 1440 260" preserveAspectRatio="none">
+      <path d="M0 150 Q 240 70 480 130 T 960 120 T 1440 100 V260 H0Z" fill="#1d1430"/>
+      <path d="M0 200 Q 300 130 620 190 T 1180 170 T 1440 180 V260 H0Z" fill="#150f22"/>
+    </svg>
+    <div id="leaves" class="leaves"></div>
+  </div>
+
+  <header class="topbar">
+    <a class="brand" href="#focus" aria-label="Gourdian home">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
+        <path d="M15 8 C15 5 16 3 18 2 L19.5 3.5 C18 4.5 17.5 6 17.5 8 Z" fill="#7d9a3c"/>
+        <ellipse cx="10" cy="19" rx="8" ry="10" fill="#c9530c"/><ellipse cx="22" cy="19" rx="8" ry="10" fill="#c9530c"/>
+        <ellipse cx="16" cy="19" rx="7.5" ry="11" fill="#f47a1a"/>
+        <path d="M10 17 L12.5 13 L15 17Z M17 17 L19.5 13 L22 17Z M9.5 21 Q16 28 22.5 21 Q16 24 9.5 21Z" fill="#ffe08a"/>
+      </svg>
+      <span>Gourdian</span>
+    </a>
+    <nav class="tabs" aria-label="Sections">
+      <a href="#focus" data-view="focus">Focus</a>
+      <a href="#stats" data-view="stats">Stats</a>
+      <a href="#graveyard" data-view="graveyard">Graveyard</a>
+    </nav>
+    <div class="top-actions">
+      <button type="button" id="btn-notify" class="icon-btn" aria-pressed="false" aria-label="Notifications">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/><path class="slash" d="M3 3l18 18"/></svg>
+      </button>
+      <button type="button" id="btn-sound" class="icon-btn" aria-pressed="true" aria-label="Sound">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M11 5 6 9H2v6h4l5 4V5z"/><path class="wave" d="M15.5 8.5a5 5 0 0 1 0 7M19 5a10 10 0 0 1 0 14"/><path class="slash" d="M22 9l-6 6M16 9l6 6"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <section id="view-focus" class="view focus-grid">
+      <div class="stage">
+        <div class="bubble" id="bubble">
+          <span class="bubble-ghost" id="bubble-ghost" aria-hidden="true"></span>
+          <span class="bubble-typed" id="bubble-text" aria-hidden="true"></span>
+          <span class="sr-only" id="bubble-sr" aria-live="polite"></span>
+        </div>
+        <button type="button" class="jack" id="jack" aria-label="Poke the pumpkin"></button>
+        <div class="vitals">
+          <div class="vitals-row">
+            <strong id="p-name">Jack</strong><span class="sep" aria-hidden="true">·</span><span id="p-stage" class="muted">Tiny Gourd</span>
+          </div>
+          <div class="meter" id="fresh-meter" role="meter" aria-label="Freshness" aria-valuemin="0" aria-valuemax="100" aria-valuenow="100">
+            <div class="meter-fill" id="fresh-fill"></div>
+          </div>
+          <div class="vitals-row small">
+            <span id="fresh-label">Farm fresh · 100% fresh</span>
+            <span id="p-next" class="muted"></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="card" id="card-setup">
+          <h1 class="card-title">What are we working on?</h1>
+          <form id="setup-form" autocomplete="off">
+            <label class="sr-only" for="task">Task</label>
+            <input id="task" class="input" maxlength="60" placeholder="e.g. CECS 274 problem set">
+            <p class="field-label" id="len-label">Session length (minutes)</p>
+            <div class="chips" id="chips" role="radiogroup" aria-labelledby="len-label"></div>
+            <button class="btn btn-primary btn-big" type="submit">Start focusing</button>
+          </form>
+          <p class="hint">Leave this tab and Jack starts to rot, live. Come back and you have to confess where you went.</p>
+        </div>
+
+        <div class="card" id="card-run" hidden>
+          <p class="eyebrow">Focusing on</p>
+          <h2 class="card-title" id="run-task">Untitled grind</h2>
+          <div class="clock" id="run-clock" role="timer" aria-live="off">25:00</div>
+          <div class="vine" aria-hidden="true"><div class="vine-fill" id="run-fill"></div></div>
+          <p class="run-status small muted" id="run-status"></p>
+          <dl class="run-stats">
+            <div><dt>Trips away</dt><dd id="run-trips">0</dd></div>
+            <div><dt>Unexcused</dt><dd id="run-away">0s</dd></div>
+            <div><dt>Work passes</dt><dd id="run-passes">2</dd></div>
+          </dl>
+          <div class="row">
+            <button type="button" class="btn" id="btn-pause">Pause</button>
+            <button type="button" class="btn btn-ghost" id="btn-giveup">Give up</button>
+          </div>
+        </div>
+
+        <div class="card card-confess" id="card-confess" hidden>
+          <p class="eyebrow eyebrow-alert">Confession time</p>
+          <h2 class="card-title">You were gone <span id="conf-time">0s</span>.</h2>
+          <p class="damage">Pending damage: <strong id="conf-dmg">+0% rot</strong></p>
+          <p class="fatal" id="conf-fatal" hidden>⚠️ This one is fatal unless it was work.</p>
+          <p class="muted">Where'd you go? Be honest. Jack can tell. (Jack cannot tell.)</p>
+          <div class="culprits" id="culprits"></div>
+          <p class="small muted" id="conf-timer"></p>
+        </div>
+
+        <div class="card" id="card-break" hidden>
+          <p class="eyebrow">Break time</p>
+          <h2 class="card-title">Go scroll. It's legal now.</h2>
+          <div class="clock" id="break-clock" role="timer" aria-live="off">5:00</div>
+          <div class="vine vine-break" aria-hidden="true"><div class="vine-fill" id="break-fill"></div></div>
+          <p class="muted">Jack is napping. Leaving the tab won't rot anything until the break ends.</p>
+          <div class="row"><button type="button" class="btn" id="btn-skip-break">I'm ready, skip the break</button></div>
+        </div>
+
+        <div class="card card-dead" id="card-dead" hidden>
+          <p class="eyebrow">Rest in pieces</p>
+          <h2 class="card-title" id="dead-title">Jack has died.</h2>
+          <p class="muted" id="dead-cause"></p>
+          <form id="replant-form" autocomplete="off">
+            <label class="field-label" for="new-name">Name your next pumpkin</label>
+            <input id="new-name" class="input" maxlength="24" placeholder="Jack II">
+            <button class="btn btn-primary btn-big" type="submit">Plant a new pumpkin 🌱</button>
+          </form>
+          <p class="hint"><a href="#graveyard">Visit the graveyard</a> to pay your respects.</p>
+        </div>
+
+        <div class="card card-how" id="card-how">
+          <h2 class="how-title">How it works</h2>
+          <ol class="how">
+            <li><span class="how-n">1</span><span><strong>Start a session.</strong> Jack watches this tab while the timer runs.</span></li>
+            <li><span class="how-n">2</span><span><strong>Wander off and Jack rots</strong> in real time. Mold, flies, the works. Even the tab icon rots.</span></li>
+            <li><span class="how-n">3</span><span><strong>Come back and confess.</strong> Real work in another tab gets excused (twice). Finish and Jack heals and grows.</span></li>
+          </ol>
+        </div>
+      </div>
+    </section>
+
+    <section id="view-stats" class="view page" hidden>
+      <header class="page-head">
+        <h1>Your patch</h1>
+        <p class="muted">Focus stats and a full record of what's been killing your pumpkins. Stored only in this browser.</p>
+      </header>
+      <div class="tiles">
+        <div class="tile"><span class="tile-label">Total focus</span><span class="tile-val" id="t-focus">0m</span></div>
+        <div class="tile"><span class="tile-label">Sessions finished</span><span class="tile-val" id="t-sessions">0</span></div>
+        <div class="tile"><span class="tile-label">Day streak</span><span class="tile-val" id="t-streak">0</span></div>
+        <div class="tile"><span class="tile-label">Pumpkins lost</span><span class="tile-val" id="t-lost">0</span></div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <h2>Pumpkin killers</h2>
+          <p class="muted small">Time away by where you said you went, across every pumpkin.</p>
+          <ul class="bars" id="killers"></ul>
+          <p class="small muted" id="excused"></p>
+        </div>
+        <div class="card pumpkin-card">
+          <div class="pc-jack" id="pc-jack"></div>
+          <div class="pc-body">
+            <h2 id="pc-name">Jack</h2>
+            <p class="muted small" id="pc-meta"></p>
+            <div class="vine small-vine" aria-hidden="true"><div class="vine-fill" id="pc-fill"></div></div>
+            <p class="small muted" id="pc-next"></p>
+            <dl class="mini-stats">
+              <div><dt>Focus</dt><dd id="pc-focus">0m</dd></div>
+              <div><dt>Sessions</dt><dd id="pc-sessions">0</dd></div>
+              <div><dt>Fresh</dt><dd id="pc-fresh">100%</dd></div>
+            </dl>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Recent sessions</h2>
+        <div class="table-wrap">
+          <table class="sessions">
+            <thead><tr><th>Date</th><th>Task</th><th>Length</th><th>Trips</th><th>Grade</th></tr></thead>
+            <tbody id="sessions-body"></tbody>
+          </table>
+        </div>
+      </div>
+      <p class="reset-row"><button type="button" class="btn btn-ghost btn-sm danger" id="btn-reset">Reset everything</button></p>
+    </section>
+
+    <section id="view-graveyard" class="view page" hidden>
+      <header class="page-head">
+        <h1>The graveyard</h1>
+        <p class="muted">Every pumpkin you've lost. They watched so you didn't have to.</p>
+      </header>
+      <div class="graves" id="graves"></div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    Made for Pumpkin Playground · CSULB ACM, fall 2026 · No accounts, no tracking. Jack lives in your browser.
+  </footer>
+
+  <dialog class="modal" id="modal-report" aria-labelledby="rep-name">
+    <div class="report">
+      <div class="grade-badge" id="rep-letter">A</div>
+      <p class="eyebrow">Report card</p>
+      <h2 id="rep-name">Fresh Picked</h2>
+      <p class="muted" id="rep-note"></p>
+      <p class="rep-task" id="rep-task"></p>
+      <dl class="rep-stats">
+        <div><dt>Focused</dt><dd id="rep-focused"></dd></div>
+        <div><dt>Trips away</dt><dd id="rep-trips"></dd></div>
+        <div><dt>Top distraction</dt><dd id="rep-top"></dd></div>
+      </dl>
+      <p class="stageup" id="rep-stageup" hidden></p>
+      <div class="row wrap">
+        <button type="button" class="btn btn-primary" id="rep-break" autofocus>Take a 5-min break</button>
+        <button type="button" class="btn" id="rep-again">Go again</button>
+      </div>
+      <button type="button" class="btn btn-ghost btn-sm" id="rep-save">Save report card image</button>
+    </div>
+    <form method="dialog" class="modal-x"><button aria-label="Close" class="icon-btn">✕</button></form>
+  </dialog>
+
+  <dialog class="modal modal-death" id="modal-death" aria-labelledby="death-name">
+    <div class="tomb">
+      <div class="tomb-jack" id="death-jack"></div>
+      <p class="rip">R.I.P.</p>
+      <h2 id="death-name">Jack</h2>
+      <p class="dates" id="death-dates"></p>
+      <p id="death-stats"></p>
+      <p class="cause" id="death-cause"></p>
+      <p class="epitaph" id="death-epitaph"></p>
+    </div>
+    <div class="row wrap center">
+      <button type="button" class="btn btn-ghost" id="death-save">Save obituary</button>
+      <button type="button" class="btn btn-primary" id="death-close" autofocus>Grieve &amp; continue</button>
+    </div>
+  </dialog>
+
+  <dialog class="modal modal-sm" id="modal-confirm" aria-labelledby="cf-title">
+    <form method="dialog">
+      <h2 id="cf-title"></h2>
+      <p class="muted" id="cf-body"></p>
+      <div class="row end">
+        <button class="btn btn-ghost" value="cancel" autofocus>Never mind</button>
+        <button class="btn btn-danger" value="ok" id="cf-ok">OK</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
