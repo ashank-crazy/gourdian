@@ -41,6 +41,7 @@
     <nav class="tabs" aria-label="Sections">
       <a href="#focus" data-view="focus">Focus</a>
       <a href="#stats" data-view="stats">Stats</a>
+      <a href="#insights" data-view="insights">Insights</a>
       <a href="#graveyard" data-view="graveyard">Graveyard</a>
     </nav>
     <div class="top-actions">
@@ -100,6 +101,11 @@
             <div><dt>Unexcused</dt><dd id="run-away">0s</dd></div>
             <div><dt>Work passes</dt><dd id="run-passes">2</dd></div>
           </dl>
+          <div class="risk" id="run-risk">
+            <div class="risk-head"><span>Slip risk, next 5 min</span><strong id="risk-val">–</strong></div>
+            <div class="risk-track" aria-hidden="true"><div class="risk-fill" id="risk-fill"></div><div class="risk-mark"></div></div>
+            <p class="small muted" id="risk-note"></p>
+          </div>
           <div class="row">
             <button type="button" class="btn" id="btn-pause">Pause</button>
             <button type="button" class="btn btn-ghost" id="btn-giveup">Give up</button>
@@ -193,6 +199,85 @@
       <p class="reset-row"><button type="button" class="btn btn-ghost btn-sm danger" id="btn-reset">Reset everything</button></p>
     </section>
 
+    <section id="view-insights" class="view page" hidden>
+      <header class="page-head">
+        <h1>Insights</h1>
+        <p class="muted">Your focus, modeled. Every number on this page is computed in this browser from your own session log. Nothing is uploaded.</p>
+      </header>
+      <div class="chips source" id="ins-source" role="radiogroup" aria-label="Whose data">
+        <button type="button" class="chip" role="radio" data-source="mine" aria-checked="true">Your data<small id="src-n"></small></button>
+        <button type="button" class="chip" role="radio" data-source="sample" aria-checked="false">Sample student<small>synthetic · 6 weeks</small></button>
+      </div>
+      <p class="banner" id="ins-banner" hidden></p>
+      <div class="tiles">
+        <div class="tile"><span class="tile-label">Median time to first slip</span><span class="tile-val" id="i-median">–</span><span class="tile-sub" id="i-median-sub"></span></div>
+        <div class="tile"><span class="tile-label">Session length for you</span><span class="tile-val" id="i-rec">–</span><span class="tile-sub" id="i-rec-sub"></span></div>
+        <div class="tile"><span class="tile-label">Slip-free sessions</span><span class="tile-val" id="i-clean">–</span><span class="tile-sub" id="i-clean-sub"></span></div>
+        <div class="tile"><span class="tile-label">Slips per focus hour</span><span class="tile-val" id="i-rate">–</span><span class="tile-sub" id="i-rate-sub"></span></div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <h2>How long you last</h2>
+          <p class="muted small">Share of sessions still slip-free at each minute (Kaplan–Meier). The band is a 95% interval. Sessions that ended clean are censored, not counted as failures.</p>
+          <div class="chart" id="ch-survival"></div>
+          <p class="chart-note" id="n-survival"></p>
+        </div>
+        <div class="card">
+          <h2>When you slip</h2>
+          <p class="muted small">Slips per focus hour at each hour of the day. Faded bars have under an hour of data, so they're pulled toward your average (empirical Bayes) and one bad night can't define an hour.</p>
+          <div class="chart" id="ch-hours"></div>
+          <p class="chart-note" id="n-hours"></p>
+        </div>
+      </div>
+      <div class="grid-2">
+        <div class="card">
+          <h2>What raises your risk</h2>
+          <p class="muted small">How each factor changes the odds of slipping in a given minute, from a logistic hazard model trained in your browser. Lines are 95% intervals. Faded bars aren't settled yet.</p>
+          <div class="chart" id="ch-effects"></div>
+          <p class="chart-note" id="n-effects"></p>
+        </div>
+        <div class="card">
+          <h2>What each distraction costs</h2>
+          <p class="muted small">Every confessed trip away, grouped by where you said you went.</p>
+          <div class="table-wrap">
+            <table class="sessions cost">
+              <thead><tr><th>Where</th><th>Trips</th><th>Typical</th><th>Worst 10%</th><th>Total</th></tr></thead>
+              <tbody id="cost-body"></tbody>
+            </table>
+          </div>
+          <p class="chart-note" id="n-cost"></p>
+        </div>
+      </div>
+      <div class="card">
+        <h2>Does the model work?</h2>
+        <p class="muted small">The model is trained on your oldest 70% of sessions, then scored minute by minute on the newest 30%, which it has never seen.</p>
+        <div class="check-grid">
+          <dl class="check-stats" id="check-stats"></dl>
+          <div class="calib">
+            <div class="chart" id="ch-calib"></div>
+            <p class="chart-note">Each dot is a fifth of the test minutes: predicted risk (across) against the share that really slipped (up). Near the line means well calibrated.</p>
+          </div>
+        </div>
+        <p class="chart-note" id="n-check"></p>
+      </div>
+      <div class="card">
+        <h2>Do Jack's warnings work?</h2>
+        <p class="muted small">When the model rates the next 5 minutes as risky, Jack warns you half the time, picked at random. The other half is the control group. This is a micro-randomized trial: comparing the two measures what the warning itself does, not just a correlation.</p>
+        <div id="nudge-body"></div>
+        <label class="toggle"><input type="checkbox" id="exp-toggle"> <span>Keep randomizing. Turn this off and Jack warns you every time.</span></label>
+      </div>
+      <div class="card">
+        <h2>The data</h2>
+        <p class="muted small">Gourdian keeps a minute-level log of each session in this browser: when it started, when you left the tab, for how long, and where you said you went. No account, no server, no analytics scripts. Download it, or delete it from the Stats tab.</p>
+        <div class="row wrap export-row">
+          <button type="button" class="btn btn-sm" id="exp-sessions">Sessions (CSV)</button>
+          <button type="button" class="btn btn-sm" id="exp-trips">Trips away (CSV)</button>
+          <button type="button" class="btn btn-sm" id="exp-json">Everything (JSON)</button>
+        </div>
+        <p class="chart-note" id="n-export"></p>
+      </div>
+    </section>
+
     <section id="view-graveyard" class="view page" hidden>
       <header class="page-head">
         <h1>The graveyard</h1>
@@ -203,8 +288,10 @@
   </main>
 
   <footer class="footer">
-    Made for Pumpkin Playground · CSULB ACM, fall 2026 · No accounts, no tracking. Jack lives in your browser.
+    Made for Pumpkin Playground (CSULB ACM) and DataNova 2026 · No accounts, no tracking. Jack and his models live in your browser.
   </footer>
+
+  <div class="tip" id="tip" role="tooltip" hidden></div>
 
   <dialog class="modal" id="modal-report" aria-labelledby="rep-name">
     <div class="report">

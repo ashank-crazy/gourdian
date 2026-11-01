@@ -22,6 +22,12 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      # The analytics are tested before anything ships: unit tests, then a quick run of the validation study.
+      - run: npm test
+      - run: node analysis/validate.mjs --quick > /dev/null
       # Static site: no build step. Ship only what the page needs.
       - run: mkdir _site && cp -r index.html styles.css favicon.svg js media _site/
       - uses: actions/upload-pages-artifact@v3

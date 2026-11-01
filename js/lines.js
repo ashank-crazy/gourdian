@@ -201,6 +201,15 @@ export const LINES = {
     'Something is growing on me. Please come back.',
     'Hello?? The timer is still running.',
   ],
+  // said when the risk model flags the next few minutes as a likely slip
+  riskWarn: [
+    'Heads up: this is about when you usually wander off. Stay with me.',
+    "My numbers say you're about to crack. Prove my numbers wrong.",
+    "Minute {m}. Statistically, this is where the phone comes out. Don't.",
+    'Danger zone. I can feel it in my seeds.',
+    'Your slip risk just spiked. Eyes on the work, not the feed.',
+    'Historically, you leave me right about now. Not today.',
+  ],
   denied: ['Your browser said no. {name} respects boundaries.'],
   notifyOn: ["Notifications on. I'll nag you if you wander off. Lovingly."],
   // tab titles while away, keyed by seconds gone
